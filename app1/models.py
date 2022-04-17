@@ -7,7 +7,7 @@ class ModeloAuditoria(models.Model):
     INACTIVO = 'Inactivo'
     ESTADO_OPCIONES = [
         (ACTIVO, 'activo'),
-        (INACTIVO, 'Inactivo'),
+        (INACTIVO, 'inactivo'),
     ]
 
     estado = models.CharField(max_length=8, choices=ESTADO_OPCIONES, default=ACTIVO)
@@ -20,10 +20,14 @@ class ModeloAuditoria(models.Model):
 
 # Create your models here.
 class Categoria(ModeloAuditoria):
-    descripcion = models.CharField(max_length=50, unique=True)
+    descripcion = models.CharField(
+        max_length=100,
+        help_text='Descripción de la Categoria',
+        unique=True
+    )
 
     def __str__(self):
-        return self.descripcion
+        return '{}'.format(self.descripcion)
     
     def save(self):
         self.descripcion = self.descripcion.upper()
@@ -31,6 +35,24 @@ class Categoria(ModeloAuditoria):
     
     class Meta:
         verbose_name_plural = "Categorias"
+
+class SubCategoria(ModeloAuditoria):
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
+    descripcion = models.CharField(
+        max_length=100,
+        help_text='Descripción de la Sub Categoria'
+    )
+
+    def __str__(self):
+        return '{}:{}'.format(self.categoria.descripcion, self.descripcion)
+    
+    def save(self):
+        self.descripcion = self.descripcion.upper()
+        super(SubCategoria, self).save()
+    
+    class Meta:
+        verbose_name_plural = "Sub Categorias"
+        unique_together = ('categoria', 'descripcion')
 
 class Persona(ModeloAuditoria):
     nombre = models.CharField(max_length=50)

@@ -1,0 +1,168 @@
+Consultas Mayor Que (>):
+    querys_mayorque = = Categoria.objects.filter(id__gt=2)
+    Traducido a SQL:
+    'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+     FROM "app1_categoria"
+     WHERE "app1_categoria"."id" > 2'
+
+======================================
+
+Consultas Menor Que (<):
+    querys_menorque = Categoria.objects.filter(id__lt=2)
+    Traducido a SQL:
+    'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+     FROM "app1_categoria"
+     WHERE "app1_categoria"."id" < 2'
+
+======================================
+
+Consultas OR:
+    - forma_1 = Categoria.objects.filter(descripcion__startswith='P') | Categoria.objects.filter(descripcion__startswith='B')
+    - forma_2 = Categoria.objects.filter(Q(descripcion__startswith='P') | Q(descripcion__startswith='B'))
+    Traducido a SQL:
+    'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+     FROM "app1_categoria"
+     WHERE ("app1_categoria"."descripcion"::text LIKE P% OR
+            "app1_categoria"."descripcion"::text LIKE B%)'
+
+======================================
+
+Consultas AND:
+    - forma_1 = Categoria.objects.filter(descripcion__startswith='I', activo=True)
+    - forma_2 = Categoria.objects.filter(descripcion__startswith='B') & Categoria.objects.filter(activo=True)
+    - forma_3 = Categoria.objects.filter(Q(descripcion__startswith='B') & Q(activo=True))
+    Traducido a SQL:
+    forma_1:
+        'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+         FROM "app1_categoria"
+         WHERE ("app1_categoria"."activo" AND
+                "app1_categoria"."descripcion"::text LIKE I%)'
+    forma_2 y forma_3:
+        'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+         FROM "app1_categoria"
+         WHERE ("app1_categoria"."descripcion"::text LIKE B% AND
+                "app1_categoria"."activo")'
+
+======================================
+
+Consultas NOT:
+    - forma_1 = Categoria.objects.exclude(id=2)
+    - forma_2 = Categoria.objects.filter(~Q(id__lt=2))
+    Traducido a SQL:
+    forma_1:
+        'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+         FROM "app1_categoria"
+         WHERE NOT ("app1_categoria"."id" = 2)'
+    forma_2:
+        'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+         FROM "app1_categoria"
+         WHERE NOT ("app1_categoria"."id" < 2)'
+
+======================================
+
+Consultas UNION:
+    - union = Categoria.objects.all().values_list('id', 'descripcion').union(... SubCategoria.objects.all().values_list('id', 'descripcion'))
+
+======================================
+
+Consultas values, values_list, only:
+    - values = Categoria.objects.filter(activo=True).values('id', 'descripcion')
+        resultado:
+            <QuerySet [{'id': 2, 'descripcion': 'Base de datos'}, {'id': 3, 'descripcion': 'Servidores'}]>
+        Traducido a SQL:
+            'SELECT "app1_categoria"."id", "app1_categoria"."descripcion"
+             FROM "app1_categoria"
+             WHERE "app1_categoria"."activo"'
+
+    - values_list = Categoria.objects.filter(activo=False).values_list('id', 'descripcion')
+        resultado:
+            <QuerySet [(7, 'INTELIGENCIA ARTIFICIAL'), (1, 'Programación')]>
+        Traducido a SQL:
+            'SELECT "app1_categoria"."id", "app1_categoria"."descripcion"
+             FROM "app1_categoria"
+             WHERE NOT "app1_categoria"."activo"'
+
+    - only = Categoria.objects.filter(activo=True).only('id', 'descripcion')
+        resultado:
+            <QuerySet [<Categoria: Base de datos>, <Categoria: Servidores>, <Categoria: Redes>, <Categoria: Soporte>, <Categoria: Administración>]>
+        Traducido a SQL:
+            'SELECT "app1_categoria"."id", "app1_categoria"."descripcion"
+             FROM "app1_categoria"
+             WHERE "app1_categoria"."activo"'
+
+======================================
+
+Consultas Subquery:
+    - subquery = Categoria.objects.filter(
+                    id__in=Subquery(SubCategoria.objects.filter(activo=True).values('categoria_id'))
+                )
+        resultado:
+            <QuerySet [<Categoria: Base de datos>, <Categoria: Servidores>]>
+        Traducido a SQL:
+            'SELECT "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+             FROM "app1_categoria"
+             WHERE "app1_categoria"."id" IN (SELECT U0."categoria_id"
+                                            FROM "app1_subcategoria" U0
+                                            WHERE U0."activo")'
+
+======================================
+
+Consultas JOIN:
+    - related = SubCategoria.objects.select_related('categoria')
+        resultado:
+            <QuerySet [<SubCategoria: Base de datos:SymmetricDS>, <SubCategoria: Programación:Django>, <SubCategoria: Servidores:Restful Api con Django>, <SubCategoria: Base de datos:PostgresSQL>]>
+        Traducido a SQL:
+            'SELECT "app1_subcategoria"."id", "app1_subcategoria"."estado", "app1_subcategoria"."fecha_creacion", "app1_subcategoria"."fecha_modificacion", "app1_subcategoria"."activo", "app1_subcategoria"."categoria_id", "app1_subcategoria"."descripcion", "app1_categoria"."id", "app1_categoria"."estado", "app1_categoria"."fecha_creacion", "app1_categoria"."fecha_modificacion", "app1_categoria"."activo", "app1_categoria"."descripcion"
+             FROM "app1_subcategoria"
+             INNER JOIN "app1_categoria"
+             ON ("app1_subcategoria"."categoria_id" = "app1_categoria"."id")'
+    
+    - related_filter = SubCategoria.objects.filter(categoria__descripcion='Base de datos')
+        resultado:
+            <QuerySet [<SubCategoria: Base de datos:SymmetricDS>, <SubCategoria: Base de datos:PostgresSQL>]>
+        Traducido a SQL:
+            'SELECT "app1_subcategoria"."id", "app1_subcategoria"."estado", "app1_subcategoria"."fecha_creacion", "app1_subcategoria"."fecha_modificacion", "app1_subcategoria"."activo", "app1_subcategoria"."categoria_id", "app1_subcategoria"."descripcion"
+             FROM "app1_subcategoria"
+             INNER JOIN "app1_categoria"
+             ON ("app1_subcategoria"."categoria_id" = "app1_categoria"."id")
+             WHERE "app1_categoria"."descripcion" = Base de datos'
+
+======================================
+
+Consultas ENESIMO REGISTRO:
+    - ENESIMO = Categoria.objects.all()
+        resultado:
+            <QuerySet [<Categoria: Base de datos>, <Categoria: Servidores>, <Categoria: Redes>, <Categoria: Soporte>, <Categoria: Administración>, <Categoria: INTELIGENCIA ARTIFICIAL>, <Categoria: Programación>]>
+    
+    - ENESIMO = Categoria.objects.all()[0]
+        resultado:
+            <Categoria: Base de datos>
+
+    - ENESIMO = Categoria.objects.all()[1]
+        resultado:
+            <Categoria: Servidores>
+    
+======================================
+
+Consultas AGRUPAR REGISTROS:
+    - Avg = Categoria.objects.all().aggregate(Avg('id'))
+        resultado:
+            {'id__avg': 4.0}
+    
+    - Max = Categoria.objects.all().aggregate(Max('id'))
+        resultado:
+            {'id__max': 7}
+    
+    - Min = Categoria.objects.all().aggregate(Min('id'))
+        resultado:
+            {'id__min': 1}
+    
+    - Sum = Categoria.objects.all().aggregate(Sum('id'))
+        resultado:
+            {'id__sum': Decimal('28')}
+    
+    - Count = Categoria.objects.all().aggregate(Count('id'))
+        resultado:
+            {'id__count': 7}
+    
+    
