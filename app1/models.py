@@ -23,15 +23,14 @@ class Categoria(ModeloAuditoria):
     descripcion = models.CharField(
         max_length=100,
         help_text='Descripción de la Categoria',
-        unique=True
+        unique=False
     )
 
     def __str__(self):
         return '{}'.format(self.descripcion)
     
-    def save(self):
-        self.descripcion = self.descripcion.upper()
-        super(Categoria, self).save()
+    def save(self, *args, **kwargs):
+        super(Categoria, self).save(*args, **kwargs)
     
     class Meta:
         verbose_name_plural = "Categorias"
@@ -196,3 +195,29 @@ class NuevoNombre(models.Model):
     class Meta:
         db_table='nuevo_nombre'
 
+class Unico(models.Model):
+    nombre = models.CharField(
+        max_length=100
+    )
+
+    def save(self, *args, **kwargs):
+        if self.__class__.objects.count():
+            self.pk = self.__class__.objects.first().pk
+        super().save(*args, **kwargs)
+    
+    @classmethod
+    def truncate(cls):
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute('TRUNCATE TABLE "{0}" CASCADE'.format(cls._meta.db_table))
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+@receiver(post_save, sender=Categoria)
+def categoria_save(sender, **kwargs):
+    print('Categoria Guardada')
+
+@receiver(post_delete, sender=Categoria)
+def categoria_delete(sender, **kwargs):
+    print('Categoria Eliminada')

@@ -164,5 +164,3 @@ Consultas AGRUPAR REGISTROS:
     - Count = Categoria.objects.all().aggregate(Count('id'))
         resultado:
             {'id__count': 7}
-    
-    

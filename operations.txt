@@ -1,0 +1,99 @@
+    ======================================
+
+    Ingresar un Registro:
+        Categoria.objects.create(descripcion='Lengua y Literatura')
+
+    ======================================
+
+    Agregar Multiples Registros:
+        Categoria.objects.bulk_create([
+            Categoria(descripcion='Idioma Ingles'),
+            Categoria(descripcion='Matematicas'),
+            Categoria(descripcion='Fisica')
+        ])
+
+    ======================================
+
+    Clonar o Copiar un Registro Existente:
+        categoria = Categoria.objects.first()
+        categoria.pk = None
+        categoria.save()
+    
+    ======================================
+
+    Restringir Modelos a un Único Resgitro:
+        ** Define un Modelo donde en su metodo SAVE valides que ya exista
+        un registro en el modelo **
+
+        class Unico(models.Model):
+            nombre = models.CharField(
+                max_length=100
+            )
+
+            def save(self, *args, **kwargs):
+                if self.__class__.objects.count():
+                    self.pk = self.__class__.objects.first().pk
+                super().save(*args, **kwargs)
+
+    ======================================
+
+    Actualizar un Registro:
+        forma_1:
+            one = Unico.objects.first()
+            one.nombre = 'Arellan'
+            one.save()
+        
+        forma_2:
+            Categoria.objects.filter(
+                descripcion='Fisica'
+            ).update(
+                descripcion='Física'
+            )
+
+    ======================================
+
+    Delete - Truncate:
+        *Delete:
+            forma_1:
+                Unico.objects.filter(nombre='Arellan').delete()
+            caso_especial:
+                Unico.objects.all().delete()
+    
+        *Truncate:
+            ** Definir Truncate en el modelo **
+            class Unico(models.Model):
+                nombre = models.CharField(max_length=100)
+
+                def save(self, *args, **kwargs):
+                    if self.__class__.objects.count():
+                        self.pk = self.__class__.objects.first().pk
+                    super().save(*args, **kwargs)
+                
+                @classmethod
+                def truncate(cls):
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        cursor.execute('TRUNCATE TABLE "{0}" CASCADE'.format(cls._meta.db_table))
+            
+            Ejecucion:
+                Unico.truncate()
+
+    ======================================
+
+    Signals:
+        pre_init | post_init
+        pre_save | post_save
+        pre_delete | post_delete
+
+        Sender | Receiver
+
+        from django.db.models.signals import post_save, post_delete
+        from django.dispatch import receiver
+
+        @receiver(post_save, sender=Categoria)
+        def categoria_save(sender, **kwargs):
+            print('Categoria Guardada')
+
+        @receiver(post_delete, sender=Categoria)
+        def categoria_delete(sender, **kwargs):
+            print('Categoria Eliminada')
