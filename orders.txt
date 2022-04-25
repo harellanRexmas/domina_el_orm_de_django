@@ -1,0 +1,123 @@
+    ======================================
+    
+    Ordenar Ascendente y Descendente:
+        *Ascendente:
+            Categoria.objects.all().order_by('descripcion')
+            
+            Resultado:
+                <QuerySet [
+                    <Categoria: Administración>,
+                    <Categoria: Base de datos>,
+                    <Categoria: Física>,
+                    <Categoria: INTELIGENCIA ARTIFICIAL>,
+                    <Categoria: Idioma Ingles>,
+                    <Categoria: Lengua y Literatura>,
+                    <Categoria: Matematicas>,
+                    <Categoria: Programación>,
+                    <Categoria: Redes>,
+                    <Categoria: Servidores>,
+                    <Categoria: Soporte>
+                ]>
+        
+        *Descendente:
+            Categoria.objects.all().order_by('-descripcion')
+
+            Resultado:
+                <QuerySet [
+                    <Categoria: Soporte>,
+                    <Categoria: Servidores>,
+                    <Categoria: Redes>,
+                    <Categoria: Programación>,
+                    <Categoria: Matematicas>,
+                    <Categoria: Lengua y Literatura>,
+                    <Categoria: Idioma Ingles>,
+                    <Categoria: INTELIGENCIA ARTIFICIAL>,
+                    <Categoria: Física>,
+                    <Categoria: Base de datos>,
+                    <Categoria: Administración>
+                ]>
+        
+        *Ordenar mas de un campo:
+            Categoria.objects.all().order_by('fecha_creacion', 'descripcion')
+
+            Resultado:
+                <QuerySet [
+                    <Categoria: Administración>,
+                    <Categoria: Base de datos>,
+                    <Categoria: Redes>,
+                    <Categoria: Servidores>,
+                    <Categoria: Soporte>,
+                    <Categoria: INTELIGENCIA ARTIFICIAL>,
+                    <Categoria: Lengua y Literatura>,
+                    <Categoria: Idioma Ingles>,
+                    <Categoria: Matematicas>,
+                    <Categoria: Física>,
+                    <Categoria: Programación>
+                ]>
+
+    ======================================
+
+    Ordenar Case Sensitive y Insensitive:
+        *Sensitive:
+            from django.db.models.functions import Lower
+            Categoria.objects.all().order_by(Lower('descripcion')).values_list('descripcion', flat=True)
+
+            Categoria.objects.annotate(
+                lowersc=Lower('descripcion')
+                ).order_by(
+                    'lowersc'
+                ).values_list('descripcion', flat=True)
+
+    ======================================
+
+    Ordenar desde el Modelo Relacionado por la Llave Extrajera:
+        Ascendente:
+            SubCategoria.objects.all().order_by('categoria__descripcion').values_list('descripcion')
+    
+            *SubCategoria.objects.all().order_by('categoria__descripcion').values_list('descripcion', 'categoria__descripcion')
+            *Resultado:
+                <QuerySet [('SymmetricDS', 'Base de datos'), ('PostgresSQL', 'Base de datos'), ('Restful Api con Django', 'Servidores')]>
+        Descendente:
+            SubCategoria.objects.all().order_by('-categoria__id').values_list('descripcion')
+
+    ======================================
+
+    Ordenar Campos Annotate:
+
+        *Ascendente:
+            Categoria.objects.annotate(
+                conteo=Count('subcategoria')
+            ).values_list(
+                'descripcion', 'conteo'
+            ).order_by('conteo')
+
+            Resultado:
+                <QuerySet [
+                    ('Soporte', 0),
+                    ('Redes', 0),
+                    ('Lengua y Literatura', 0),
+                    ('Administración', 0),
+                    ('Física', 0),
+                    ('Programación', 0),
+                    ('Matematicas', 0),
+                    ('INTELIGENCIA ARTIFICIAL', 0),
+                    ('Idioma Ingles', 0),
+                    ('Servidores', 1),
+                    ('Base de datos', 2)
+                ]>
+
+        *Descendente:
+            Categoria.objects.annotate(
+                conteo=Count('subcategoria')
+            ).values_list(
+                'descripcion', 'conteo'
+            ).order_by('-conteo')
+
+            Resultado:
+                <QuerySet [
+                    ('Base de datos', 2),
+                    ('Servidores', 1),
+                    ('Lengua y Literatura', 0),
+                    ('Administración', 0),
+                    ...
+                ]>
